@@ -12,6 +12,17 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^6.3.3"
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/mdx": "^5.0.6",
+    "astro": "^6.3.6",
+    "typescript": "^6.0.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@unocss/astro": "^66.6.8",
+    "@unocss/preset-attributify": "^66.6.8",
+    "@unocss/preset-uno": "^66.6.8",
+    "@unocss/reset": "^66.6.8",
+    "unocss": "^66.6.8"
   }
 }

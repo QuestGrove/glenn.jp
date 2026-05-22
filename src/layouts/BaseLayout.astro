@@ -1,0 +1,28 @@
+---
+const { pageTitle } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Quest Grove</title>
+  </head>
+  <body>
+    <header>
+      <h1>Quest Grove</h1>
+      <nav>
+          <ul>
+              <li><a href="/">Home</a></li>
+              <li><a href="/writings">Writings</a></li>   
+              <li><a href="/endeavors">Endeavors</a></li>
+              <li><a href="/manuals">Manuals</a></li>
+          </ul>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+  </body>
+  </html>
