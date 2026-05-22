@@ -1,4 +1,5 @@
 ---
+import Navigation from "../components/Navigation.astro"; 
 const { pageTitle } = Astro.props;
 ---
 
@@ -13,12 +14,7 @@ const { pageTitle } = Astro.props;
     <header>
       <h1>Quest Grove</h1>
       <nav>
-          <ul>
-              <li><a href="/">Home</a></li>
-              <li><a href="/writings">Writings</a></li>   
-              <li><a href="/endeavors">Endeavors</a></li>
-              <li><a href="/manuals">Manuals</a></li>
-          </ul>
+        <Navigation />
       </nav>
     </header>
     <main>
