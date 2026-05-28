@@ -1,22 +1,22 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getCollection, render } from "astro:content";
+import { getCollection, render } from 'astro:content'
+import WritingLayout from '../../layouts/WritingLayout.astro'
 
 export async function getStaticPaths() {
-  const posts = await getCollection("writings");
-
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }));
+  const writings = await getCollection('writings')
+  return writings.map(w => ({ params: { slug: w.id }, props: { writing: w } }))
 }
 
-const { post } = Astro.props;
-const { Content } = await render(post);
+const { writing }          = Astro.props
+const { Content, headings } = await render(writing)
 ---
 
-<BaseLayout title={post.data.title}>
-  <h1>{post.data.title}</h1>
+<WritingLayout
+  title={writing.data.title}
+  date={writing.data.date}
+  description={writing.data.description}
+  tags={writing.data.tags}
+  headings={headings}
+>
   <Content />
-</BaseLayout>
-
+</WritingLayout>

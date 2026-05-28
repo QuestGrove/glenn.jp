@@ -1,0 +1,35 @@
+---
+// src/components/ThemeToggle.astro
+// The dark / light toggle button. Isolated here so Header stays clean.
+---
+
+<button id="theme-toggle" title="Toggle dark / light mode" aria-label="Toggle colour scheme">
+  <span class="sun" aria-hidden="true">☀️</span>
+  <span class="moon" aria-hidden="true">🌙</span>
+</button>
+
+<style>
+  button {
+    background: none; border: none; cursor: pointer;
+    font-size: 1rem; line-height: 1; padding: 0;
+    opacity: 0.55; transition: opacity 0.15s;
+  }
+  button:hover { opacity: 1; }
+
+  /* Light mode: show moon (to switch to dark) */
+  .sun  { display: none; }
+  .moon { display: inline; }
+
+  /* Dark mode: show sun (to switch to light) */
+  :global(.dark) .sun  { display: inline; }
+  :global(.dark) .moon { display: none; }
+</style>
+
+<script>
+  const btn  = document.getElementById('theme-toggle')!
+  const html = document.documentElement
+  btn.addEventListener('click', () => {
+    const dark = html.classList.toggle('dark')
+    localStorage.setItem('color-scheme', dark ? 'dark' : 'light')
+  })
+</script>

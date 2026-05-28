@@ -1,7 +1,140 @@
---- 
-import BaseLayout from "../../layouts/BaseLayout.astro";
---- 
+---
+// src/pages/endeavors/index.astro
+// ─────────────────────────────────────────────────────────────────────────
+// Structured like Anthony Fu's projects page:
+//   - Ghost watermark section headings (huge outlined text)
+//   - Items in a responsive grid (no card borders)
+//   - Sections ordered: Active → Paused → Complete
+//   - Sections only render if they have content
+// ─────────────────────────────────────────────────────────────────────────
+import { getCollection } from 'astro:content'
+import BaseLayout    from '../../layouts/BaseLayout.astro'
+import EndeavorItem  from '../../components/EndeavorItem.astro'
 
-<BaseLayout title="Blog">
-  <h2>Endeavors</h2>
+const all = await getCollection('endeavors')
+
+// Sort within each section by startDate, newest first
+const byDate = (a: any, b: any) =>
+  b.data.startDate.valueOf() - a.data.startDate.valueOf()
+
+const active   = all.filter(e => e.data.status === 'active').sort(byDate)
+const paused   = all.filter(e => e.data.status === 'paused').sort(byDate)
+const complete = all.filter(e => e.data.status === 'complete').sort(byDate)
+
+// Only the sections that actually have content
+const sections = [
+  { label: 'Active',   items: active   },
+  { label: 'Paused',   items: paused   },
+  { label: 'Complete', items: complete },
+].filter(s => s.items.length > 0)
+---
+
+<BaseLayout title="Endeavors" description="Things I am doing myself, in sequence">
+  <div class="page">
+
+    <div class="header slide-enter delay-1">
+      <h1>Endeavors</h1>
+      <p class="sub">
+        Anything with a sequence that I am doing myself.
+        Not projects — journeys.
+      </p>
+    </div>
+
+    {sections.map((section, i) => (
+      <div class="section slide-enter" style={`animation-delay: ${(i + 2) * 80}ms`}>
+
+        <!--
+          Ghost watermark heading.
+          The text is huge, transparent with only a stroke outline,
+          and positioned slightly outside the normal flow so it sits
+          behind the grid as a label without taking up space.
+        -->
+        <div class="section-label" aria-hidden="true">
+          <span class="ghost-text">{section.label}</span>
+        </div>
+
+        <!-- The grid of items for this section -->
+        <div class="grid">
+          {section.items.map(e => (
+            <EndeavorItem
+              slug={e.id}
+              title={e.data.title}
+              description={e.data.description}
+              currentStage={e.data.currentStage}
+              status={e.data.status}
+              icon={e.data.icon}
+            />
+          ))}
+        </div>
+      </div>
+    ))}
+
+  </div>
 </BaseLayout>
+
+<style>
+  /* ── Page container ───────────────────────────────────────────────
+     Slightly wider than Prose so the grid can breathe.
+     Still centered and padded the same way.                        */
+  .page {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 0 1.75rem;
+  }
+
+  /* ── Page header ─────────────────────────────────────────────── */
+  h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+  .sub { font-size: 0.9rem; opacity: 0.5; margin-top: 0.35rem; }
+
+  /* ── One section (label + grid) ──────────────────────────────── */
+  .section { margin-top: 2.5rem; }
+
+  /* ── Ghost watermark label ───────────────────────────────────────
+     This is the signature element from Anthony Fu's projects page.
+     The container reserves vertical space for the grid to sit under.
+     The span is positioned absolutely so it overlaps naturally.    */
+  .section-label {
+    position: relative;
+    height: 4.5rem;
+    margin-bottom: -0.5rem;   /* pull grid up slightly under the label */
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .ghost-text {
+    font-family: 'Lora', Georgia, serif;
+    font-size: clamp(2.75rem, 8vw, 5rem);
+    font-weight: 700;
+    line-height: 1;
+
+    /* The "ghost" effect: transparent fill, visible outline only */
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--c-border);
+
+    position: absolute;
+    left: -0.4rem;
+    top: 0;
+    opacity: 0.6;
+  }
+
+  /* In dark mode the stroke is more visible so reduce opacity */
+  :global(.dark) .ghost-text { opacity: 0.25; }
+
+  /* ── Item grid ───────────────────────────────────────────────────
+     1 column on mobile → 2 on tablet → 3 on wide screens.
+     Same proportions as Anthony Fu's project grid.                */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+    padding: 0.5rem 0;
+  }
+
+  @media (min-width: 640px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (min-width: 1024px) {
+    .grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>

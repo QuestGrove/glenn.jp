@@ -1,0 +1,120 @@
+---
+// src/components/TableOfContents.astro
+// ─────────────────────────────────────────────────────────────────────────
+// Receives the `headings` array that Astro gives you from render().
+// Shows h2 and h3 only. Sticks to the right side on wide screens.
+// Highlights the heading you're currently reading as you scroll.
+// ─────────────────────────────────────────────────────────────────────────
+
+interface Heading {
+  depth: number   // 1 = h1, 2 = h2, 3 = h3, etc.
+  slug:  string   // the id on the heading element
+  text:  string   // the visible text
+}
+
+interface Props {
+  headings: Heading[]
+}
+
+// Filter to only h2 and h3 — h1 is the page title, deeper than h3 is noise
+const { headings } = Astro.props
+const toc = headings.filter(h => h.depth === 2 || h.depth === 3)
+---
+
+{toc.length > 1 && (
+  <nav class="toc" aria-label="Table of contents">
+    <p class="toc-label">On this page</p>
+    <ul>
+      {toc.map(h => (
+        <li class:list={['toc-item', { 'toc-h3': h.depth === 3 }]}>
+          <a href={`#${h.slug}`} class="toc-link" data-slug={h.slug}>
+            {h.text}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}
+
+<style>
+  .toc {
+    position: sticky;
+    /* Stick below the fixed header */
+    top: 5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    padding: 0 0 1rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+
+  .toc-label {
+    font-family: 'Lora', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.4;
+    margin-bottom: 0.6rem;
+    font-weight: 600;
+  }
+
+  ul { list-style: none; padding: 0; margin: 0; }
+
+  .toc-item { margin: 0; }
+  .toc-h3 { padding-left: 0.9rem; }
+
+  .toc-link {
+    display: block;
+    padding: 0.2rem 0;
+    text-decoration: none;
+    opacity: 0.45;
+    transition: opacity 0.15s, color 0.15s;
+    border-left: 2px solid transparent;
+    padding-left: 0.6rem;
+    margin-left: -0.8rem;
+  }
+
+  .toc-link:hover { opacity: 0.8; }
+
+  /* The active link gets the accent colour */
+  .toc-link.is-active {
+    opacity: 1;
+    color: var(--c-accent);
+    border-left-color: var(--c-accent);
+  }
+</style>
+
+<script>
+  // ── Scroll spy — highlights the TOC link for the section you're in ─────
+  // IntersectionObserver watches each heading. When one enters the viewport
+  // it marks that TOC link as active. Simple and performant.
+
+  const links = document.querySelectorAll<HTMLAnchorElement>('.toc-link')
+  if (links.length > 0) {
+    const slugs = Array.from(links).map(l => l.dataset.slug!)
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            // Remove active from all links
+            links.forEach(l => l.classList.remove('is-active'))
+            // Add active to the matching link
+            const match = document.querySelector(`.toc-link[data-slug="${entry.target.id}"]`)
+            match?.classList.add('is-active')
+          }
+        })
+      },
+      {
+        // Trigger when heading is near the top of the viewport
+        rootMargin: '-20% 0% -70% 0%',
+        threshold: 0,
+      }
+    )
+
+    slugs.forEach(slug => {
+      const el = document.getElementById(slug)
+      if (el) observer.observe(el)
+    })
+  }
+</script>

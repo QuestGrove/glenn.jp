@@ -1,0 +1,63 @@
+---
+// src/components/Header.astro
+// Top navigation. Edit navLinks to change what appears in the nav.
+import NavLink     from './NavLink.astro'
+import ThemeToggle from './ThemeToggle.astro'
+
+const navLinks = [
+  { href: '/writings',  label: 'Writings'  },
+  { href: '/endeavors', label: 'Endeavors' },
+  { href: '/manuals',   label: 'Manuals'   },
+]
+---
+
+<header>
+  <a href="/" class="wordmark" aria-label="Quest Grove — home">
+    <span class="mark">✦</span>
+    Quest Grove
+  </a>
+
+  <nav aria-label="Main navigation">
+    {navLinks.map(l => <NavLink href={l.href} label={l.label} />)}
+    <ThemeToggle />
+  </nav>
+</header>
+
+<style>
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.75rem;
+    background: var(--c-bg);
+    border-bottom: 1px solid var(--c-border);
+    z-index: 100;
+  }
+
+  .wordmark {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    opacity: 0.9;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    letter-spacing: -0.01em;
+  }
+  .wordmark:hover { opacity: 1; }
+
+  .mark {
+    color: var(--c-accent);
+    font-size: 0.75rem;
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+</style>

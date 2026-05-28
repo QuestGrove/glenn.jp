@@ -1,14 +1,51 @@
---- 
-import BaseLayout from "../../layouts/BaseLayout.astro";
---- 
+---
+import { getCollection } from 'astro:content'
+import BaseLayout  from '../../layouts/BaseLayout.astro'
+import Prose       from '../../components/Prose.astro'
+import ManualCard  from '../../components/ManualCard.astro'
 
-<BaseLayout title="Blog">
-  <h2>Manuals</h2>
+const all = await getCollection('manuals')
+
+// TEMPORARY DEBUG — delete this after fixing
+console.log('All manual IDs:', all.map(m => m.id))
+
+// Index files are the ones named index.md — one per topic
+const topics = all.filter(m => !m.id.includes('/'))
+
+// For each topic, count how many section pages belong to it
+const topicsWithCounts = topics.map(topic => {
+  const pages = all.filter(m => m.id.startsWith(topic.id + '/'))
+  return { topic, pages }
+})
+---
+
+<BaseLayout title="Manuals" description="Trail guides written from inside the experience">
+  <Prose>
+    <h1 class="slide-enter delay-1">Manuals</h1>
+    <p class="sub slide-enter delay-2">
+      Pathways through territories I've explored.
+      Written from inside the experience, not above it.
+      Tended over time.
+    </p>
+
+    <ul class="grid slide-enter delay-3">
+      {topicsWithCounts.map(({ topic, pages }) => (
+        <ManualCard
+          topic={topic.id}
+          title={topic.data.title}
+          description={topic.data.description ?? ''}
+          lastTended={topic.data.lastTended ?? new Date()}
+          pageCount={pages.length}
+          phaseCount={topic.data.phases?.length ?? 0}
+        />
+      ))}
+    </ul>
+  </Prose>
 </BaseLayout>
 
 <style>
-  h2 {
-    text-align: center;
-    color: darkorange
-  }
+  h1 { margin-bottom: 0.25rem; }
+  .sub { opacity: 0.5; font-size: 0.9rem; margin-top: 0.35rem; line-height: 1.6; }
+  .grid { padding: 0; margin-top: 1.5rem;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 0.75rem; }
 </style>

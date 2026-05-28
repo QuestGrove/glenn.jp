@@ -1,0 +1,68 @@
+---
+// src/components/ProjectCard.astro
+// ─────────────────────────────────────────────────────────────────────────
+// One card in the projects list.
+// ─────────────────────────────────────────────────────────────────────────
+
+interface Props {
+  name:        string
+  description: string
+  link:        string
+  stars?:      number
+}
+
+const { name, description, link, stars } = Astro.props
+---
+
+<li class="card">
+  <a href={link} target="_blank" rel="noopener" class="card-link">
+    <div class="top">
+      <span class="name">{name}</span>
+      {stars !== undefined && (
+        <span class="stars">★ {stars.toLocaleString()}</span>
+      )}
+    </div>
+    <p class="desc">{description}</p>
+  </a>
+</li>
+
+<style>
+  .card {
+    list-style: none;
+    border: 1px solid var(--c-border);
+    border-radius: 0.6rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--c-muted); }
+
+  .card-link {
+    display: block;
+    padding: 1rem 1.2rem;
+    text-decoration: none;
+  }
+
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .stars {
+    font-size: 0.8rem;
+    opacity: 0.4;
+    white-space: nowrap;
+  }
+
+  .desc {
+    font-size: 0.85rem;
+    opacity: 0.6;
+    margin-top: 0.35rem;
+    line-height: 1.5;
+  }
+</style>

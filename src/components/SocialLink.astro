@@ -1,0 +1,32 @@
+---
+// src/components/SocialLink.astro
+// A single social media link button used on the home page.
+// Usage: <SocialLink href="https://github.com/you" label="GitHub" />
+
+interface Props {
+  href:  string
+  label: string
+}
+const { href, label } = Astro.props
+---
+
+<a href={href} target="_blank" rel="noopener" class="social-link">
+  {label}
+</a>
+
+<style>
+  .social-link {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--c-border);
+    border-radius: 0.375rem;
+    font-size: 0.82rem;
+    text-decoration: none;
+    opacity: 0.65;
+    transition: opacity 0.15s, border-color 0.15s;
+  }
+  .social-link:hover {
+    opacity: 1;
+    border-color: var(--c-accent);
+  }
+</style>

@@ -1,0 +1,67 @@
+---
+// src/components/PostItem.astro
+// ─────────────────────────────────────────────────────────────────────────
+// One row in the blog post list: a clickable title on the left,
+// and a date on the right.
+// ─────────────────────────────────────────────────────────────────────────
+
+interface Props {
+  title:       string
+  date:        Date
+  slug:        string
+  description?: string
+}
+
+const { title, date, slug, description } = Astro.props
+
+// Format the date as "Jun 1, 2025"
+const formattedDate = date.toLocaleDateString('en-US', {
+  year: 'numeric', month: 'short', day: 'numeric',
+})
+---
+
+<li>
+  <a href={`/posts/${slug}`} class="row">
+    <span class="title">{title}</span>
+    <time class="date" datetime={date.toISOString()}>{formattedDate}</time>
+  </a>
+  {description && <p class="desc">{description}</p>}
+</li>
+
+<style>
+  li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--c-border);
+    list-style: none;
+  }
+  li:last-child { border-bottom: none; }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    text-decoration: none;
+  }
+  .row:hover .title { opacity: 0.65; }
+
+  .title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: opacity 0.15s;
+  }
+
+  .date {
+    font-size: 0.8rem;
+    opacity: 0.45;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .desc {
+    font-size: 0.85rem;
+    opacity: 0.55;
+    margin-top: 0.2rem;
+  }
+</style>

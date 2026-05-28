@@ -1,0 +1,24 @@
+---
+// src/components/PageTitle.astro
+// ─────────────────────────────────────────────────────────────────────────
+// A simple animated <h1> used at the top of every page.
+// Keeping it as its own component means you only style it once.
+// ─────────────────────────────────────────────────────────────────────────
+
+interface Props {
+  title: string
+}
+
+const { title } = Astro.props
+---
+
+<h1 class="slide-enter slide-enter-1">{title}</h1>
+
+<style>
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+  }
+</style>

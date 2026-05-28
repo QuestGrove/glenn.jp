@@ -1,0 +1,113 @@
+---
+// src/pages/manuals/[topic]/index.astro
+// The table of contents page for one manual topic (e.g. /manuals/adhd)
+import { getCollection, render } from 'astro:content'
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import Prose      from '../../../components/Prose.astro'
+
+export async function getStaticPaths() {
+  const all    = await getCollection('manuals')
+  const topics = all.filter(m => !m.id.includes('/'))
+
+  return topics.map(topic => {
+    // All section pages for this topic, sorted by order field
+    const pages  = all
+      .filter(m => m.id.startsWith(topic.id + '/'))
+      .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
+
+    return {
+      params: { topic: topic.id },
+      props:  { manual: topic, pages },
+    }
+  })
+}
+
+const { manual, pages } = Astro.props
+const { Content }        = await render(manual)
+const d                  = manual.data
+const tended = d.lastTended?.toLocaleDateString('en-US', {
+  year: 'numeric', month: 'long', day: 'numeric',
+})
+
+// Group pages by their phase field
+const phases: Record<string, typeof pages> = {}
+pages.forEach(p => {
+  const phase = p.data.phase ?? 'General'
+  if (!phases[phase]) phases[phase] = []
+  phases[phase].push(p)
+})
+
+function pageSlug(id: string) {
+  return id.split('/').slice(1).join('/')
+}
+---
+
+<BaseLayout title={d.title} description={d.description}>
+  <Prose>
+    <a href="/manuals" class="back">← Manuals</a>
+
+    <div class="header slide-enter delay-1">
+      <h1>{d.title}</h1>
+      {tended && <p class="tended">Last tended: {tended}</p>}
+      {d.description && <p class="desc">{d.description}</p>}
+    </div>
+
+    <hr />
+
+    <!-- ── Table of contents by phase ────────────────────────────── -->
+    <nav class="toc-block slide-enter delay-2" aria-label="Manual contents">
+      <p class="toc-label">Contents</p>
+      {Object.entries(phases).map(([phase, phasePages]) => (
+        <div class="phase">
+          <p class="phase-name">{phase}</p>
+          <ul>
+            {phasePages.map(p => (
+              <li>
+                <a href={`/manuals/${Astro.params.topic}/${pageSlug(p.id)}`}>
+                  {p.data.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+
+    <hr />
+
+    <!-- ── Introduction text from the index.md content ───────────── -->
+    <div class="slide-enter delay-4">
+      <Content />
+    </div>
+  </Prose>
+</BaseLayout>
+
+<style>
+  .back { display: inline-block; font-size: 0.82rem; opacity: 0.45;
+    text-decoration: none; margin-bottom: 1.5rem; transition: opacity 0.15s; }
+  .back:hover { opacity: 1; }
+
+  h1 { margin-bottom: 0.3rem; }
+  .tended { font-size: 0.78rem; opacity: 0.4; margin-top: 0.3rem; }
+  .desc { font-size: 0.95rem; opacity: 0.7; margin-top: 0.6rem; font-style: italic; }
+
+  .toc-block { margin: 0; }
+  .toc-label { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    opacity: 0.4; margin-bottom: 1rem; font-weight: 700; }
+
+  .phase { margin-bottom: 1.25rem; }
+  .phase-name { font-family: 'Lora', serif; font-size: 0.82rem; font-weight: 600;
+    opacity: 0.55; margin-bottom: 0.4rem; }
+
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { padding: 0.2rem 0; }
+
+  li a {
+    text-decoration: none; font-size: 0.95rem;
+    border-left: 2px solid var(--c-border);
+    padding-left: 0.75rem;
+    display: block;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  li a:hover { border-color: var(--c-accent); color: var(--c-accent); }
+</style>

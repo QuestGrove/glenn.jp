@@ -1,0 +1,50 @@
+---
+// src/pages/manuals/[topic]/[page].astro
+import { getCollection, render } from 'astro:content'
+import ManualLayout from '../../../layouts/ManualLayout.astro'
+
+export async function getStaticPaths() {
+  const all   = await getCollection('manuals')
+  // Section pages are any entry whose id contains a slash e.g. 'adhd/what-it-actually-is'
+  const pages = all.filter(m => m.id.includes('/'))
+
+  return pages.map(entry => {
+    const parts  = entry.id.split('/')
+    const topic  = parts[0]
+    const page   = parts.slice(1).join('/')
+
+    // All pages in this topic sorted by order — needed for prev/next
+    const siblings = all
+      .filter(m => m.id.startsWith(topic +'/'))
+      .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
+
+    const idx  = siblings.findIndex(s => s.id === entry.id)
+    const prev = siblings[idx - 1] ?? null
+    const next = siblings[idx + 1] ?? null
+
+    // Get the topic's index to show its title in the breadcrumb
+    const topicIndex = all.find(m => m.id === topic)
+
+    return {
+      params: { topic, page },
+      props:  { entry, prev, next, topicTitle: topicIndex?.data.title ?? topic },
+    }
+  })
+}
+
+const { entry, prev, next, topicTitle } = Astro.props
+const { Content, headings }              = await render(entry)
+const { topic }                          = Astro.params
+---
+
+<ManualLayout
+  title={entry.data.title}
+  topic={topic}
+  topicTitle={topicTitle}
+  phase={entry.data.phase}
+  headings={headings}
+  prev={prev}
+  next={next}
+>
+  <Content />
+</ManualLayout>

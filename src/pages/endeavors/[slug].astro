@@ -1,0 +1,71 @@
+---
+import { getCollection, render } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Prose      from '../../components/Prose.astro'
+
+export async function getStaticPaths() {
+  const endeavors = await getCollection('endeavors')
+  return endeavors.map(e => ({ params: { slug: e.id }, props: { endeavor: e } }))
+}
+
+const { endeavor }         = Astro.props
+const { Content, headings } = await render(endeavor)
+const d = endeavor.data
+const started = d.startDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+---
+
+<BaseLayout title={d.title} description={d.description}>
+  <Prose>
+    <a href="/endeavors" class="back">← Endeavors</a>
+
+    <div class="header slide-enter delay-1">
+      <div class="title-row">
+        <h1>{d.title}</h1>
+        <span class:list={['badge', `badge-${d.status}`]}>{d.status}</span>
+      </div>
+      <p class="desc">{d.description}</p>
+      <p class="started">Started {started}</p>
+    </div>
+
+    <!-- Stage trail -->
+    <div class="stages slide-enter delay-2">
+      <p class="stages-label">Journey</p>
+      {d.stages.map(s => (
+        <div class:list={['stage', { done: s.done, current: s.name === d.currentStage }]}>
+          <span class="dot" />
+          <span>{s.name}</span>
+        </div>
+      ))}
+    </div>
+
+    <hr />
+
+    <div class="slide-enter delay-4">
+      <Content />
+    </div>
+  </Prose>
+</BaseLayout>
+
+<style>
+  .back { display: inline-block; font-size: 0.82rem; opacity: 0.45;
+    text-decoration: none; margin-bottom: 1.5rem; transition: opacity 0.15s; }
+  .back:hover { opacity: 1; }
+
+  .title-row { display: flex; align-items: flex-start; gap: 0.75rem; justify-content: space-between; }
+  h1 { margin-bottom: 0.35rem; }
+  .desc { opacity: 0.65; font-size: 0.95rem; margin-top: 0.5rem; }
+  .started { font-size: 0.8rem; opacity: 0.4; margin-top: 0.4rem; }
+
+  .stages { margin: 1.5rem 0; }
+  .stages-label { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    opacity: 0.4; margin-bottom: 0.75rem; font-weight: 700; }
+
+  .stage { display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0;
+    font-size: 0.88rem; opacity: 0.4; }
+  .stage.done    { opacity: 0.7; }
+  .stage.current { opacity: 1; color: var(--c-accent); font-weight: 600; }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--c-border); }
+  .stage.done .dot    { background: var(--c-muted); }
+  .stage.current .dot { background: var(--c-accent); }
+</style>

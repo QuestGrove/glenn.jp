@@ -1,0 +1,87 @@
+---
+// src/components/EndeavorCard.astro
+interface Stage { name: string; done: boolean }
+interface Props {
+  slug:         string
+  title:        string
+  description:  string
+  status:       'active' | 'paused' | 'complete'
+  currentStage: string
+  stages:       Stage[]
+  startDate:    Date
+}
+const { slug, title, description, status, currentStage, stages, startDate } = Astro.props
+const started = startDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+const doneCount = stages.filter(s => s.done).length
+---
+
+<li class="card">
+  <a href={`/endeavors/${slug}`} class="card-link">
+    <div class="top">
+      <span class="title">{title}</span>
+      <span class:list={['badge', `badge-${status}`]}>{status}</span>
+    </div>
+    <p class="desc">{description}</p>
+
+    <!-- Stage progress — a trail of waypoints -->
+    <div class="stages" aria-label="Progress through stages">
+      {stages.map((s, i) => (
+        <div class:list={['stage', { done: s.done, current: s.name === currentStage }]}>
+          <span class="dot" />
+          <span class="stage-name">{s.name}</span>
+        </div>
+      ))}
+    </div>
+
+    <p class="meta">
+      {doneCount} of {stages.length} stages · Started {started}
+    </p>
+  </a>
+</li>
+
+<style>
+  .card {
+    list-style: none;
+    border: 1px solid var(--c-border);
+    border-radius: 0.6rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--c-muted); }
+
+  .card-link {
+    display: block; padding: 1.1rem 1.25rem; text-decoration: none;
+  }
+
+  .top {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; gap: 0.75rem;
+  }
+
+  .title { font-family: 'Lora', serif; font-size: 1rem; font-weight: 600; }
+
+  .desc { font-size: 0.85rem; opacity: 0.6; margin-top: 0.4rem; line-height: 1.5; }
+
+  /* ── Stage trail ──────────────────────────────────────────────────── */
+  .stages {
+    display: flex; flex-direction: column;
+    gap: 0.3rem; margin: 1rem 0 0.75rem;
+    padding-left: 0.25rem;
+  }
+
+  .stage {
+    display: flex; align-items: center;
+    gap: 0.55rem; font-size: 0.78rem; opacity: 0.4;
+  }
+  .stage.done    { opacity: 0.7; }
+  .stage.current { opacity: 1; color: var(--c-accent); font-weight: 600; }
+
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: var(--c-border);
+    transition: background 0.2s;
+  }
+  .stage.done .dot    { background: var(--c-muted); }
+  .stage.current .dot { background: var(--c-accent); }
+
+  .meta { font-size: 0.75rem; opacity: 0.4; margin-top: 0.25rem; }
+</style>

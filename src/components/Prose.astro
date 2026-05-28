@@ -1,0 +1,66 @@
+---
+// src/components/Prose.astro
+// Constrains content to a readable width and styles markdown output.
+// Wrap any page content in this. The Footer uses the same --content-width
+// variable so everything stays aligned.
+---
+
+<div class="prose">
+  <slot />
+</div>
+
+<style>
+  .prose {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 0 1.75rem;
+    line-height: 1.8;
+  }
+
+  .prose :global(h1) { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.35rem; }
+  .prose :global(h2) { font-size: 1.2rem; font-weight: 600; margin-top: 2.25rem; margin-bottom: 0.5rem; }
+  .prose :global(h3) { font-size: 1rem; font-weight: 600; margin-top: 1.75rem; margin-bottom: 0.35rem; }
+
+  .prose :global(p)  { margin-top: 1rem; }
+
+  .prose :global(ul),
+  .prose :global(ol) { margin-top: 0.75rem; padding-left: 1.5rem; }
+  .prose :global(li) { margin-top: 0.35rem; }
+
+  .prose :global(a) {
+    text-decoration: underline;
+    text-decoration-color: var(--c-border);
+    text-underline-offset: 3px;
+  }
+  .prose :global(a:hover) { text-decoration-color: var(--c-accent); }
+
+  .prose :global(blockquote) {
+    border-left: 3px solid var(--c-accent);
+    padding-left: 1rem;
+    opacity: 0.8;
+    font-style: italic;
+    margin: 1.25rem 0;
+  }
+
+  .prose :global(code) {
+    background: var(--c-bg-2);
+    padding: 0.15em 0.4em;
+    border-radius: 0.25rem;
+    font-size: 0.85em;
+  }
+
+  .prose :global(pre) {
+    background: var(--c-bg-2);
+    padding: 1.1rem 1.25rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1.25rem 0;
+  }
+  .prose :global(pre code) { background: none; padding: 0; }
+
+  .prose :global(hr) {
+    border: none;
+    border-top: 1px solid var(--c-border);
+    margin: 2rem 0;
+  }
+</style>

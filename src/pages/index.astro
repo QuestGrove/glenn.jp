@@ -1,10 +1,140 @@
 ---
-import { getCollection } from "astro:content";
-import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from 'astro:content'
+import BaseLayout   from '../layouts/BaseLayout.astro'
+import Prose        from '../components/Prose.astro'
+import WritingItem  from '../components/WritingItem.astro'
+import EndeavorItem from '../components/EndeavorItem.astro'
+import SocialLink   from '../components/SocialLink.astro'
 
-const posts = await getCollection("writings");
+const allWritings = (await getCollection('writings'))
+  .filter(w => !w.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3)
+
+const activeEndeavors = (await getCollection('endeavors'))
+  .filter(e => e.data.status === 'active')
+  .sort((a, b) => b.data.startDate.valueOf() - a.data.startDate.valueOf())
+
+// ── Edit these with your real links ───────────────────────────────────
+const socials = [
+  { label: 'GitHub',  href: 'https://github.com/YOUR_USERNAME'           },
+  { label: 'Bluesky', href: 'https://bsky.app/profile/YOU.bsky.social'  },
+  { label: 'Twitter', href: 'https://x.com/YOUR_HANDLE'                 },
+]
 ---
 
-<BaseLayout title="Blog">
-  <h2>Homepage</h2>
+<BaseLayout>
+  <Prose>
+    <div class="intro slide-enter delay-1">
+      <h1>Be welcome.</h1>
+      <p class="tagline">Journey and journal.</p>
+      <p>
+        This site is my attempt to create more and consume less.
+      </p>
+    </div>
+
+    <hr />
+
+    <section class="slide-enter delay-3">
+      <div class="section-header">
+        <h2>Recent writings</h2>
+        <a href="/writings" class="see-all">All writings →</a>
+      </div>
+      <ul class="writing-list">
+        {allWritings.map(w => (
+          <WritingItem
+            slug={w.id}
+            title={w.data.title}
+            date={w.data.date}
+            tags={w.data.tags}
+            description={w.data.description}
+          />
+        ))}
+      </ul>
+    </section>
+
+    <hr />
+
+    <section class="slide-enter delay-5">
+      <div class="section-header">
+        <h2>Active endeavors</h2>
+        <a href="/endeavors" class="see-all">All endeavors →</a>
+      </div>
+      <div class="endeavor-list">
+        {activeEndeavors.map(e => (
+          <EndeavorItem
+            slug={e.id}
+            title={e.data.title}
+            description={e.data.description}
+            currentStage={e.data.currentStage}
+            status={e.data.status}
+            icon={e.data.icon}
+          />
+        ))}
+      </div>
+    </section>
+
+    <hr />
+
+    <nav class="section-nav slide-enter delay-7" aria-label="Site sections">
+      <a href="/manuals" class="section-link">
+        <span class="section-link-title">Manuals</span>
+        <span class="section-link-desc">Trail guides written from inside the experience →</span>
+      </a>
+    </nav>
+
+    <hr />
+
+    <div class="find-me slide-enter delay-9">
+      <p class="find-label">Find me on</p>
+      <div class="socials">
+        {socials.map(s => <SocialLink href={s.href} label={s.label} />)}
+      </div>
+      <p class="email">
+        Or email: <code>hi@yourdomain.com</code>
+      </p>
+    </div>
+  </Prose>
 </BaseLayout>
+
+<style>
+  h1 { font-size: 2rem; margin-bottom: 0.35rem; }
+  .tagline { font-style: italic; opacity: 0.65; margin-top: 0.5rem; }
+
+  .section-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 0.25rem;
+  }
+  .section-header h2 {
+    font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+    opacity: 0.4; font-family: 'Atkinson Hyperlegible', sans-serif; margin: 0;
+  }
+  .see-all {
+    font-size: 0.82rem; opacity: 0.5; text-decoration: none; transition: opacity 0.15s;
+  }
+  .see-all:hover { opacity: 1; color: var(--c-accent); }
+
+  .writing-list { padding: 0; margin: 0; }
+  .endeavor-list { margin-top: 0.5rem; }
+
+  .section-link {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.9rem 1rem; gap: 1rem;
+    border: 1px solid var(--c-border); border-radius: 0.5rem;
+    text-decoration: none; transition: border-color 0.2s;
+  }
+  .section-link:hover { border-color: var(--c-accent); }
+  .section-link-title { font-weight: 600; font-family: 'Lora', serif; }
+  .section-link-desc  { font-size: 0.82rem; opacity: 0.5; }
+
+  .find-label {
+    font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+    opacity: 0.4; margin-bottom: 0.75rem;
+  }
+  .socials { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .email { margin-top: 1rem; font-size: 0.9rem; }
+  code {
+    background: var(--c-bg-2); padding: 0.1em 0.4em;
+    border-radius: 0.25rem; font-size: 0.875em;
+  }
+</style>

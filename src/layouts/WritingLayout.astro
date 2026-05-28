@@ -1,0 +1,94 @@
+---
+// src/layouts/WritingLayout.astro
+// Two-column on wide screens: content left, TOC right.
+// Single column on mobile (TOC moves to top).
+import BaseLayout       from './BaseLayout.astro'
+import Prose            from '../components/Prose.astro'
+import TableOfContents  from '../components/TableOfContents.astro'
+
+interface Heading { depth: number; slug: string; text: string }
+interface Props {
+  title:        string
+  date:         Date
+  description?: string
+  tags?:        string[]
+  headings:     Heading[]
+}
+
+const { title, date, description, tags = [], headings } = Astro.props
+
+const formatted = date.toLocaleDateString('en-US', {
+  year: 'numeric', month: 'long', day: 'numeric',
+})
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="layout">
+    <!-- ── Main content ─────────────────────────────────────────── -->
+    <div class="content">
+      <Prose>
+        <a href="/writings" class="back">← Writings</a>
+
+        <div class="header slide-enter delay-1">
+          <h1>{title}</h1>
+          <time datetime={date.toISOString()}>{formatted}</time>
+          {tags.length > 0 && (
+            <div class="tags">
+              {tags.map(t => <span class="tag">{t}</span>)}
+            </div>
+          )}
+        </div>
+
+        <hr />
+
+        <div class="slide-enter delay-3">
+          <slot />
+        </div>
+      </Prose>
+    </div>
+
+    <!-- ── TOC sidebar ──────────────────────────────────────────── -->
+    <aside class="sidebar slide-enter delay-2">
+      <TableOfContents headings={headings} />
+    </aside>
+  </div>
+</BaseLayout>
+
+<style>
+  .layout {
+    max-width: calc(var(--content-width) + 16rem);
+    margin: 0 auto;
+    padding: 0 1.75rem;
+    display: grid;
+    /* Content takes up most space; sidebar is a fixed 13rem wide */
+    grid-template-columns: 1fr 13rem;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  /* On the content side, remove Prose's own outer padding
+     since layout already handles that */
+  .content :global(.prose) { padding: 0; }
+
+  .back {
+    display: inline-block; font-size: 0.82rem;
+    opacity: 0.45; text-decoration: none;
+    margin-bottom: 1.5rem; transition: opacity 0.15s;
+  }
+  .back:hover { opacity: 1; }
+
+  .header h1 { margin-bottom: 0.3rem; }
+  time { font-size: 0.82rem; opacity: 0.45; display: block; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem; }
+  .tag {
+    font-size: 0.7rem; padding: 0.15em 0.55em;
+    background: var(--c-bg-2); border-radius: 0.25rem; opacity: 0.8;
+  }
+
+  /* ── Responsive: stack on mobile ──────────────────────────────── */
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .sidebar { order: -1; margin-bottom: 1.5rem; }
+  }
+</style>

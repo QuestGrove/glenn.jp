@@ -1,23 +1,47 @@
-// 1. Import utilities from `astro:content`
-import { defineCollection } from 'astro:content';
-// 2. Import global loader.
-import { glob } from 'astro/loaders';
-// 3. Import schema(s)
-import { baseSchema } from './content/schemata';
+// src/content.config.ts
+import { defineCollection, z } from 'astro:content'
+import { glob } from 'astro/loaders'
 
+const writings = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/writings' }),
+  schema: z.object({
+    title:       z.string(),
+    date:        z.coerce.date(),
+    tags:        z.array(z.string()).default([]),
+    description: z.string().optional(),
+    draft:       z.boolean().default(false),
+  }),
+})
 
-// 3. Export a single `collections` object to register your collection(s)
-export const collections = { 
-  writings: defineCollection({
-    loader: glob({base: './src/content/writings', pattern: '**/[^_]*.{md,mdx}' }),
-    schema: baseSchema,
+const endeavors = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/endeavors' }),
+  schema: z.object({
+    title:        z.string(),
+    description:  z.string(),
+    status:       z.enum(['active', 'paused', 'complete']).default('active'),
+    currentStage: z.string(),
+    stages: z.array(z.object({
+      name: z.string(),
+      done: z.boolean().default(false),
+    })),
+    startDate: z.coerce.date(),
+    icon:      z.string().optional(),
   }),
-  endeavors: defineCollection({
-    loader: glob({base: './src/content/endeavors', pattern: '**/[^_]*.{md,mdx}' }),
-    schema: baseSchema,
+})
+
+const manuals = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/manuals' }),
+  schema: z.object({
+    title:       z.string(),
+    description: z.string().optional(),
+    lastTended:  z.coerce.date().optional(),
+    phases: z.array(z.object({
+      name:  z.string(),
+      pages: z.array(z.string()),
+    })).optional(),
+    phase: z.string().optional(),
+    order: z.number().default(0),
   }),
-  manuals: defineCollection({
-    loader: glob({base: './src/content/manuals', pattern: '**/[^_]*.{md,mdx}' }),
-    schema: baseSchema,
-  }),
-};
+})
+
+export const collections = { writings, endeavors, manuals }

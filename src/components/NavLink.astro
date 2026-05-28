@@ -1,0 +1,39 @@
+---
+// src/components/NavLink.astro
+// One navigation link. Highlights itself when you're on that page.
+interface Props { href: string; label: string }
+const { href, label } = Astro.props
+const active = Astro.url.pathname.startsWith(href)
+---
+
+<a
+  href={href}
+  class:list={['nav-link', { active }]}
+  aria-current={active ? 'page' : undefined}
+>
+  {label}
+</a>
+
+<style>
+  .nav-link {
+    text-decoration: none;
+    font-size: 0.875rem;
+    letter-spacing: 0.01em;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+    position: relative;
+  }
+  .nav-link:hover,
+  .nav-link.active { opacity: 1; }
+
+  /* A small green dot under the active link */
+  .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 50%;
+    transform: translateX(-50%);
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--c-accent);
+  }
+</style>

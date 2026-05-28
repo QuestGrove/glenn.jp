@@ -1,0 +1,51 @@
+---
+// src/components/ManualCard.astro
+interface Props {
+  topic:       string
+  title:       string
+  description: string
+  lastTended:  Date
+  pageCount:   number
+  phaseCount:  number
+}
+const { topic, title, description, lastTended, pageCount, phaseCount } = Astro.props
+const tended = lastTended.toLocaleDateString('en-US', {
+  year: 'numeric', month: 'short', day: 'numeric',
+})
+---
+
+<li class="card">
+  <a href={`/manuals/${topic}`} class="card-link">
+    <div class="top">
+      <span class="title">{title}</span>
+      <span class="tended">tended {tended}</span>
+    </div>
+    <p class="desc">{description}</p>
+    <p class="meta">{phaseCount} phases · {pageCount} pages</p>
+  </a>
+</li>
+
+<style>
+  .card {
+    list-style: none;
+    border: 1px solid var(--c-border);
+    border-radius: 0.6rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--c-accent); }
+
+  .card-link { display: block; padding: 1.1rem 1.25rem; text-decoration: none; }
+
+  .top {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; gap: 0.75rem;
+  }
+
+  .title { font-family: 'Lora', serif; font-size: 1rem; font-weight: 600; }
+
+  .tended { font-size: 0.72rem; opacity: 0.4; white-space: nowrap; flex-shrink: 0; }
+
+  .desc { font-size: 0.85rem; opacity: 0.6; margin-top: 0.4rem; line-height: 1.5; }
+
+  .meta { font-size: 0.75rem; opacity: 0.4; margin-top: 0.5rem; color: var(--c-accent); }
+</style>

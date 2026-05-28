@@ -1,0 +1,115 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Quest Grove — Global Styles
+   ─────────────────────────────────────────────────────────────────────────
+   Palette concept:
+     Light  →  warm parchment, like a field notebook left in the sun
+     Dark   →  deep forest at night, not harsh black
+     Accent →  forest green, used sparingly so it always feels intentional
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── Colour tokens ────────────────────────────────────────────────────── */
+:root {
+  --c-bg:       #f7f4ef;   /* warm parchment                  */
+  --c-bg-2:     #eee9e1;   /* slightly deeper — cards, sidebar */
+  --c-fg:       #2c2825;   /* warm near-black                  */
+  --c-muted:    #8c8480;   /* secondary text, dates            */
+  --c-border:   #ddd8d0;   /* lines, card edges                */
+  --c-accent:   #4a7c59;   /* forest green                     */
+  --c-accent-h: #3a6347;   /* green on hover                   */
+}
+
+.dark {
+  --c-bg:       #141210;
+  --c-bg-2:     #1e1b18;
+  --c-fg:       #ede8e1;
+  --c-muted:    #6b6560;
+  --c-border:   #2a2520;
+  --c-accent:   #6a9c79;
+  --c-accent-h: #7aac89;
+}
+
+/* ── Base reset & typography ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-family: 'Atkinson Hyperlegible', ui-sans-serif, system-ui, sans-serif;
+  font-size: 17px;           /* slightly larger base for readability */
+  line-height: 1.8;
+  background: var(--c-bg);
+  color: var(--c-fg);
+  transition: background-color 0.25s, color 0.25s;
+  color-scheme: light dark;
+  scroll-behavior: smooth;
+}
+
+body { min-height: 100vh; }
+
+/* Headings use the warm serif font */
+h1, h2, h3, h4 {
+  font-family: 'Lora', Georgia, serif;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--c-border);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s, opacity 0.15s;
+}
+a:hover {
+  text-decoration-color: var(--c-accent);
+}
+
+code, pre {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.85em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--c-border);
+  margin: 2rem 0;
+}
+
+/* ── Content width — used by Prose and Footer alike ─────────────────────
+   Single source of truth so they always line up.                        */
+:root { --content-width: 48rem; }
+
+/* ── Entrance animations ──────────────────────────────────────────────── */
+@keyframes slide-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.slide-enter { animation: slide-enter 0.45s ease both; }
+
+.delay-1  { animation-delay:  60ms; }
+.delay-2  { animation-delay: 120ms; }
+.delay-3  { animation-delay: 180ms; }
+.delay-4  { animation-delay: 240ms; }
+.delay-5  { animation-delay: 300ms; }
+.delay-6  { animation-delay: 360ms; }
+.delay-7  { animation-delay: 420ms; }
+.delay-8  { animation-delay: 480ms; }
+.delay-9  { animation-delay: 540ms; }
+.delay-10 { animation-delay: 600ms; }
+
+/* ── Status badges ────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2em 0.6em;
+  border-radius: 0.25rem;
+  font-weight: 700;
+}
+.badge-active   { background: rgba(74, 124, 89, 0.15); /* accent at 15% */
+                  color: var(--c-accent); }
+.badge-paused   { background: rgba(140, 132, 128, 0.15); /* muted at 15%  */
+                  color: var(--c-muted); }
+.badge-complete { background: rgba(74, 124, 89, 0.08);   /* accent at 8%  */
+                  color: var(--c-muted); }

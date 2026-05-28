@@ -1,21 +1,42 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getCollection } from "astro:content";
+import { getCollection } from 'astro:content'
+import BaseLayout  from '../../layouts/BaseLayout.astro'
+import Prose       from '../../components/Prose.astro'
+import TagFilter   from '../../components/TagFilter.astro'
+import WritingItem from '../../components/WritingItem.astro'
 
-const pageTitle = "Writings";
-const posts = await getCollection("writings");
+const writings = (await getCollection('writings'))
+  .filter(w => !w.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+
+// Collect every unique tag across all writings
+const allTags = [...new Set(writings.flatMap(w => w.data.tags))].sort()
 ---
 
-<BaseLayout title="{pageTitle}">
-  <h1>{pageTitle}</h1>
+<BaseLayout title="Writings" description="Essays, notes, and reflections from Quest Grove">
+  <Prose>
+    <h1 class="slide-enter delay-1">Writings</h1>
+    <p class="sub slide-enter delay-2">Essays, notes, reflections — one stream, filtered by tag.</p>
 
-  <ul>
-    {posts.map((post) => (
-      <li>
-        <a href={`/writings/${post.id}`}>
-          {post.data.title}
-        </a>
-      </li>
-    ))}
-  </ul>
+    <div class="slide-enter delay-3">
+      <TagFilter tags={allTags} />
+      <ul class="list">
+        {writings.map(w => (
+          <WritingItem
+            slug={w.id}
+            title={w.data.title}
+            date={w.data.date}
+            tags={w.data.tags}
+            description={w.data.description}
+          />
+        ))}
+      </ul>
+    </div>
+  </Prose>
 </BaseLayout>
+
+<style>
+  h1 { margin-bottom: 0.25rem; }
+  .sub { opacity: 0.5; font-size: 0.9rem; margin-top: 0.35rem; }
+  .list { padding: 0; margin: 0; }
+</style>

@@ -1,0 +1,32 @@
+---
+// src/components/Head.astro
+interface Props {
+  title?: string
+  description?: string
+}
+const {
+  title       = 'Quest Grove',
+  description = 'A base camp for living, thinking, and building.',
+} = Astro.props
+
+const siteName  = 'Quest Grove'
+const fullTitle = title === siteName ? title : `${title} — ${siteName}`
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content={description} />
+<title>{fullTitle}</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<meta property="og:title"       content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta name="twitter:card"       content="summary" />
+
+<!-- Prevents white flash when dark mode is saved -->
+<script is:inline>
+  ;(function () {
+    const s = localStorage.getItem('color-scheme')
+    const d = window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.classList.toggle('dark', s === 'dark' || (!s && d))
+  })()
+</script>

@@ -1,9 +1,43 @@
 ---
-import Social from "../components/Social.astro";
+// src/components/Footer.astro
+// Uses the same --content-width variable as Prose so it always lines up.
+const year = new Date().getFullYear()
 ---
 
 <footer>
-  <Social platform="github" username="QuestGrove" />
-  <Social platform="youtube" username="@questgrove" />
-  <Social platform="x" username="Quest_Grove" />
+  <!-- This inner div mirrors the Prose component's centering exactly -->
+  <div class="inner">
+    <span>
+      <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">
+        CC BY-NC-SA 4.0
+      </a>
+      {year} © Quest Grove
+    </span>
+  </div>
 </footer>
+
+<style>
+  footer {
+    margin-top: 4rem;
+    padding-bottom: 2rem;
+    border-top: 1px solid var(--c-border);
+  }
+
+  /*
+    Key fix: .inner uses the exact same max-width and horizontal padding
+    as the Prose component, so the text always lines up with page content
+    regardless of screen width.
+  */
+  .inner {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 1.25rem 1.75rem 0;
+    font-size: 0.8rem;
+    opacity: 0.45;
+  }
+
+  a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>

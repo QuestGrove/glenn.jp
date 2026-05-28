@@ -1,0 +1,114 @@
+---
+// src/layouts/ManualLayout.astro
+// Layout for individual manual section pages.
+// Shows: back to manual, content with TOC, prev/next navigation.
+import BaseLayout      from './BaseLayout.astro'
+import Prose           from '../components/Prose.astro'
+import TableOfContents from '../components/TableOfContents.astro'
+
+interface Heading { depth: number; slug: string; text: string }
+interface SiblingPage { data: { title: string }; id: string }
+interface Props {
+  title:       string
+  topic:       string
+  topicTitle:  string
+  phase?:      string
+  headings:    Heading[]
+  prev?:       SiblingPage | null
+  next?:       SiblingPage | null
+}
+
+const { title, topic, topicTitle, phase, headings, prev, next } = Astro.props
+
+// Convert a page id like "adhd/understanding-it.md" → slug "understanding-it"
+function pageSlug(id: string) {
+  return id.replace('.md', '').split('/').slice(1).join('/')
+}
+---
+
+<BaseLayout title={`${title} — ${topicTitle}`}>
+  <div class="layout">
+    <div class="content">
+      <Prose>
+        <nav class="breadcrumb" aria-label="breadcrumb">
+          <a href="/manuals">Manuals</a>
+          <span>›</span>
+          <a href={`/manuals/${topic}`}>{topicTitle}</a>
+          {phase && <><span>›</span><span class="phase">{phase}</span></>}
+        </nav>
+
+        <h1 class="slide-enter delay-1">{title}</h1>
+
+        <div class="slide-enter delay-3">
+          <slot />
+        </div>
+
+        <!-- Prev / Next navigation at the bottom of each section -->
+        <nav class="page-nav" aria-label="Next and previous sections">
+          <div class="prev">
+            {prev && (
+              <a href={`/manuals/${topic}/${pageSlug(prev.id)}`}>
+                <span class="nav-dir">← Previous</span>
+                <span class="nav-title">{prev.data.title}</span>
+              </a>
+            )}
+          </div>
+          <div class="next">
+            {next && (
+              <a href={`/manuals/${topic}/${pageSlug(next.id)}`}>
+                <span class="nav-dir">Next →</span>
+                <span class="nav-title">{next.data.title}</span>
+              </a>
+            )}
+          </div>
+        </nav>
+      </Prose>
+    </div>
+
+    <aside class="sidebar slide-enter delay-2">
+      <TableOfContents headings={headings} />
+    </aside>
+  </div>
+</BaseLayout>
+
+<style>
+  .layout {
+    max-width: calc(var(--content-width) + 16rem);
+    margin: 0 auto;
+    padding: 0 1.75rem;
+    display: grid;
+    grid-template-columns: 1fr 13rem;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .content :global(.prose) { padding: 0; }
+
+  .breadcrumb {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.8rem; opacity: 0.5; margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .breadcrumb a { text-decoration: none; }
+  .breadcrumb a:hover { opacity: 1; text-decoration: underline; }
+  .phase { font-style: italic; }
+
+  .page-nav {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1rem; margin-top: 3rem;
+    padding-top: 1.5rem; border-top: 1px solid var(--c-border);
+  }
+
+  .next { text-align: right; }
+
+  .page-nav a { text-decoration: none; display: block; }
+  .page-nav a:hover .nav-title { color: var(--c-accent); }
+
+  .nav-dir { display: block; font-size: 0.75rem; opacity: 0.45; }
+  .nav-title { font-size: 0.88rem; font-weight: 500; transition: color 0.15s; }
+
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .sidebar { order: -1; margin-bottom: 1.5rem; }
+  }
+</style>

@@ -1,0 +1,59 @@
+---
+// src/components/WritingItem.astro
+interface Props {
+  slug:        string
+  title:       string
+  date:        Date
+  tags:        string[]
+  description?: string
+}
+const { slug, title, date, tags, description } = Astro.props
+const formatted = date.toLocaleDateString('en-US', {
+  year: 'numeric', month: 'short', day: 'numeric',
+})
+---
+
+<!--
+  data-tags is read by TagFilter.astro's script to show/hide this item.
+  We store the tags as JSON so the script can parse them.
+-->
+<li data-tags={JSON.stringify(tags)}>
+  <a href={`/writings/${slug}`} class="row">
+    <span class="title">{title}</span>
+    <time datetime={date.toISOString()} class="date">{formatted}</time>
+  </a>
+  {description && <p class="desc">{description}</p>}
+  {tags.length > 0 && (
+    <div class="tags">
+      {tags.map(t => <span class="tag">{t}</span>)}
+    </div>
+  )}
+</li>
+
+<style>
+  li { padding: 0.9rem 0; border-bottom: 1px solid var(--c-border); list-style: none; }
+  li:last-child { border-bottom: none; }
+
+  .row {
+    display: flex; justify-content: space-between;
+    align-items: baseline; gap: 1rem; text-decoration: none;
+  }
+  .row:hover .title { color: var(--c-accent); }
+
+  .title { font-weight: 500; font-size: 0.95rem; transition: color 0.15s; }
+
+  .date {
+    font-size: 0.78rem; opacity: 0.4; white-space: nowrap;
+    flex-shrink: 0; font-variant-numeric: tabular-nums;
+  }
+
+  .desc { font-size: 0.85rem; opacity: 0.55; margin-top: 0.2rem; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.4rem; }
+
+  .tag {
+    font-size: 0.7rem; padding: 0.1em 0.5em;
+    background: var(--c-bg-2); border-radius: 0.2rem;
+    opacity: 0.7;
+  }
+</style>
