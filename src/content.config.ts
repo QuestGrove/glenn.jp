@@ -10,6 +10,7 @@ const writings = defineCollection({
     tags:        z.array(z.string()).default([]),
     description: z.string().optional(),
     draft:       z.boolean().default(false),
+    ogImage: z.string().optional(),
   }),
 })
 
@@ -41,6 +42,7 @@ const manuals = defineCollection({
     })).optional(),
     phase: z.string().optional(),
     order: z.number().default(0),
+    ogImage: z.string().optional(),
   }),
 })
 

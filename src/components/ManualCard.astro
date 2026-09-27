@@ -1,51 +1,356 @@
 ---
 // src/components/ManualCard.astro
+//
+// Layout modelled on digital.gov/guides (USWDS card pattern):
+//
+//  ┌────────────────────────────────────────┐
+//  │  MEDIA — RoseBloom generative bg       │  ← DOM order: 1 (also visual: 1)
+//  │  Themed rose animation, no text        │    aspect-ratio: 16/9
+//  ├────────────────────────────────────────┤
+//  │  HEADER — title only                   │  ← DOM order: 2 (also visual: 2)
+//  ├────────────────────────────────────────┤
+//  │  BODY — description + meta             │  ← DOM order: 3 (also visual: 3)
+//  ├────────────────────────────────────────┤
+//  │  FOOTER — button labelled "{title}"    │  ← DOM order: 4 (also visual: 4)
+//  └────────────────────────────────────────┘
+//
+// DOM order matches visual order. media is aria-hidden="true" —
+// no CSS `order` needed, no text-selection quirk possible.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// ACCESSIBILITY
+// ─────────────────────────────────────────────────────────────────────────────
+// FIX 1  headingLevel prop (WCAG 1.3.1 A)
+// FIX 2  Button text = "{title}" — unique self-describing link (WCAG 2.4.6 AA)
+// FIX 3  card__media aria-hidden="true" (WCAG 1.3.1 A)
+//        RoseBloom inherits this — no additional AT surface exposed
+// FIX 4  Code kicker #8a63ff → #b39dff: 7.65:1 ✓ AAA (WCAG 1.4.3)
+// FIX 5  Meta #71767a → #525860: 7.18:1 ✓ AAA (WCAG 1.4.3)
+// FIX 6  Kicker font-size 0.65rem → 0.8125rem (WCAG 1.4.4)
+// FIX 7  Button touch target 44px via padding-y 0.875rem (WCAG 2.5.5)
+// FIX 8  :focus + :focus-visible both present (WCAG 2.4.7 AA)
+// FIX 9  appearance/border resets removed from <a> (no-ops)
+// FIX 10 lastTended: string | Date — safe Intl normalisation
+// FIX 11 Theme map drives CSS custom properties — zero CSS per new topic
+// FIX 12 !important removed — specificity fix via .card__body .card__meta
+// POINT1 Explicit flex roles — header/footer never squish, body absorbs slack
+// POINT2 DOM = visual order — no CSS order, no text-selection quirk
+//
+// CONTRAST (all verified):
+//   #1b1b1b  / #ffffff  heading             : 17.22:1 ✓ AAA
+//   #3d4551  / #ffffff  description         :  9.68:1 ✓ AAA
+//   #525860  / #ffffff  meta                :  7.18:1 ✓ AAA
+//   #ffffff  / #005ea2  button default      :  6.72:1 ✓ AA
+//   #ffffff  / #1a4480  button hover        :  9.62:1 ✓ AAA
+//   #ffffff  / #162e51  button active       : 13.60:1 ✓ AAA
+//   #b39dff  / #1b162e  code kicker         :  7.65:1 ✓ AAA
+//   #b39dff  / #0a0812  code kicker dark    :  8.69:1 ✓ AAA
+//   #2491ff  / #1f2328  default kicker      :  4.94:1 ✓ AA
+//   #00a964  / #0e2a1c  football kicker     :  5.02:1 ✓ AA
+// ─────────────────────────────────────────────────────────────────────────────
+
+import RoseBloom from './RoseBloom.astro'
+
 interface Props {
-  topic:       string
-  title:       string
-  description: string
-  lastTended:  Date
-  pageCount:   number
-  phaseCount:  number
+  topic:         string
+  title:         string
+  description:   string
+  lastTended:    string | Date  // FIX 10: Astro serialises dates to strings
+  pageCount:     number
+  phaseCount:    number
+  headingLevel?: 2 | 3 | 4     // FIX 1: caller sets correct outline level
 }
-const { topic, title, description, lastTended, pageCount, phaseCount } = Astro.props
-const tended = lastTended.toLocaleDateString('en-US', {
-  year: 'numeric', month: 'short', day: 'numeric',
-})
+
+const {
+  topic,
+  title,
+  description,
+  lastTended,
+  pageCount,
+  phaseCount,
+  headingLevel = 2,
+} = Astro.props
+
+// FIX 1: dynamic heading tag
+const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4'
+
+// FIX 10: safe date normalisation with explicit timezone
+const tended = new Intl.DateTimeFormat('en-US', {
+  year:     'numeric',
+  month:    'short',
+  day:      'numeric',
+  timeZone: 'Asia/Tokyo',
+}).format(new Date(lastTended))
+
+// FIX 11: topic theme map.
+// To add a new topic: one entry here, zero CSS changes anywhere.
+// All accent colours verified against both gradient bg endpoints.
+interface TopicTheme {
+  bg:      string  // gradient start
+  bgEnd:   string  // gradient end
+  accent:  string  // kicker + petal tint — must pass AA on bg AND bgEnd
+  petals:  number  // petal count fed to RoseBloom
+}
+
+const TOPIC_THEMES: Record<string, TopicTheme> = {
+  football: {
+    bg:     '#0e2a1c',
+    bgEnd:  '#050f0a',
+    accent: '#00a964',  // 5.02:1 / 6.36:1 ✓ AA both ends
+    petals: 26,
+  },
+  code: {
+    bg:     '#1b162e',
+    bgEnd:  '#0a0812',
+    accent: '#b39dff',  // 7.65:1 / 8.69:1 ✓ AAA both ends  ← FIX 4
+    petals: 30,
+  },
+}
+
+const DEFAULT_THEME: TopicTheme = {
+  // Xuan paper green palette
+  // bg    #243b2a: 10.11:1 on xuan paper #f2ead8 ✓ AAA
+  // bgEnd #0f2318: 13.77:1 on xuan paper ✓ AAA
+  // accent #e8d9b8: 8.68:1 on bg / 11.81:1 on bgEnd ✓ AAA
+  bg:     '#243b2a',
+  bgEnd:  '#0f2318',
+  accent: '#e8d9b8',
+  petals: 28,
+}
+
+const theme = TOPIC_THEMES[topic] ?? DEFAULT_THEME
 ---
 
+<!--
+  Parent usage:
+    <ul class="card-grid">
+      <ManualCard topic="code" title="..." ... headingLevel={3} />
+    </ul>
+
+  Recommended grid CSS on the parent <ul>:
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    align-items: stretch;   ← makes all cards in a row equal height
+    gap: 1.5rem;
+-->
 <li class="card">
-  <a href={`/manuals/${topic}`} class="card-link">
-    <div class="top">
-      <span class="title">{title}</span>
-      <span class="tended">tended {tended}</span>
+  <div class="card__container">
+
+    <!--
+      1. MEDIA — RoseBloom generative background.
+         aria-hidden="true": AT skips entirely; reads card__header next.
+         RoseBloom receives bg/bgEnd/accent from theme map.
+         The kicker span is slotted into rose-eyebrow bottom-left position.
+         FIX 3: aria-hidden covers the entire media block including RoseBloom.
+    -->
+    <div
+      class="card__media"
+      aria-hidden="true"
+    >
+      <RoseBloom
+        petals={theme.petals}
+        bg={theme.bg}
+        bgEnd={theme.bgEnd}
+        accent={theme.accent}
+      >
+        <!--
+          Slotted into .rose-eyebrow inside RoseBloom.
+          Mirrors the "Digital.gov Guide" eyebrow badge position.
+          aria-hidden on parent covers this too.
+        -->
+        <span class="card__media-kicker">{topic}</span>
+      </RoseBloom>
     </div>
-    <p class="desc">{description}</p>
-    <p class="meta">{phaseCount} phases · {pageCount} pages</p>
-  </a>
+
+    <!-- 2. HEADER — announced first by screen readers (media is aria-hidden) -->
+    <div class="card__header">
+      <Heading class="card__heading">{title}</Heading>
+    </div>
+
+    <!-- 3. BODY — description + metadata -->
+    <div class="card__body">
+      <p class="card__description">{description}</p>
+      <!-- FIX 12: .card__body .card__meta raises specificity — no !important -->
+      <p class="card__meta">{phaseCount} phases · {pageCount} pages · tended {tended}</p>
+    </div>
+
+    <!--
+      4. FOOTER — CTA button.
+      FIX 2: button text IS the manual title.
+             Each link is unique and self-describing for AT link-list navigation.
+      FIX 7: padding-y 0.875rem → 44px touch target.
+    -->
+    <div class="card__footer">
+      <a href={`/manuals/${topic}`} class="card__button">
+        {title}
+      </a>
+    </div>
+
+  </div>
 </li>
 
 <style>
+  /* ═══════════════════════════════════════════════════════════════════════════
+     CARD SHELL
+     ═══════════════════════════════════════════════════════════════════════════ */
   .card {
     list-style: none;
-    border: 1px solid var(--c-border);
-    border-radius: 0.6rem;
-    transition: border-color 0.2s;
-  }
-  .card:hover { border-color: var(--c-accent); }
-
-  .card-link { display: block; padding: 1.1rem 1.25rem; text-decoration: none; }
-
-  .top {
-    display: flex; justify-content: space-between;
-    align-items: flex-start; gap: 0.75rem;
+    margin-bottom: 2rem;
   }
 
-  .title { font-family: 'Lora', serif; font-size: 1rem; font-weight: 600; }
+  .card__container {
+    background-color: #ffffff;
+    border:           2px solid #dfe1e2;
+    border-radius:    0.5rem;
+    box-sizing:       border-box;
+    display:          flex;
+    flex-direction:   column;
+    height:           100%;
+    overflow:         hidden;  /* clips RoseBloom flush to border-radius */
+    position:         relative;
+  }
 
-  .tended { font-size: 0.72rem; opacity: 0.4; white-space: nowrap; flex-shrink: 0; }
+  /* ═══════════════════════════════════════════════════════════════════════════
+     FLEX ALIGNMENT — POINT 1 fix
+     Explicit flex roles so all cards in a grid row align their
+     headers at the top and footers at the bottom, regardless of
+     how differently the button text wraps across adjacent cards.
 
-  .desc { font-size: 0.85rem; opacity: 0.6; margin-top: 0.4rem; line-height: 1.5; }
+       card__media  flex-shrink: 0  → fixed height, never squishes
+       card__header flex-shrink: 0  → fixed height, never squishes
+       card__body   flex: 1 1 auto  → absorbs ALL variable space
+       card__footer flex-shrink: 0  → always pinned to bottom
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .card__media  { flex-shrink: 0; }
+  .card__header { flex-shrink: 0; }
+  .card__body   { flex: 1 1 auto; }
+  .card__footer { flex-shrink: 0; }
 
-  .meta { font-size: 0.75rem; opacity: 0.4; margin-top: 0.5rem; color: var(--c-accent); }
+  /* ═══════════════════════════════════════════════════════════════════════════
+     MEDIA BLOCK
+     Position relative so RoseBloom's absolute inset:0 fills it exactly.
+     16:9 gives the generous top-third proportion digital.gov uses.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .card__media {
+    width:        100%;
+    aspect-ratio: 16 / 9;
+    position:     relative;   /* RoseBloom uses position:absolute inset:0 */
+    overflow:     hidden;
+    user-select:  none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     KICKER — slotted into RoseBloom's .rose-eyebrow
+     FIX 4 + FIX 6: colour from --rose-accent (set by RoseBloom from theme),
+     font-size raised from 0.65rem → 0.8125rem
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .card__media-kicker {
+    display:        inline-block;
+    font-size:      0.8125rem;          /* FIX 6 */
+    font-weight:    700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color:          var(--rose-accent, #2491ff);  /* FIX 4: inherits from RoseBloom scope */
+    line-height:    1;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .card__header {
+    padding: 1.25rem 1.5rem 0.375rem;
+  }
+
+  .card__heading {
+    font-family: 'Lora', Georgia, serif;
+    font-size:   1.0625rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin:      0;
+    color:       #1b1b1b;  /* 17.22:1 ✓ AAA */
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BODY
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .card__body {
+    flex:    1 1 auto;
+    padding: 0.375rem 1.5rem 0.5rem;
+  }
+
+  .card__description {
+    font-size:   0.9375rem;
+    line-height: 1.6;
+    color:       #3d4551;  /* 9.68:1 ✓ AAA */
+    margin:      0 0 0.5rem;
+  }
+
+  /* FIX 5: #71767a → #525860 (7.18:1 ✓ AAA)
+     FIX 12: raised specificity removes need for !important */
+  .card__body .card__meta {
+    font-size:     0.8125rem;
+    color:         #525860;
+    line-height:   1.5;
+    margin-top:    0.5rem;
+    margin-bottom: 0;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .card__footer {
+    padding: 0.5rem 1.5rem 1.25rem;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BUTTON
+     FIX 2:  text = guide title (WCAG 2.4.6 AA)
+     FIX 7:  44px touch target (WCAG 2.5.5 AAA)
+     FIX 8:  :focus + :focus-visible (WCAG 2.4.7 AA)
+     FIX 9:  appearance/border no-ops removed
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .card__button {
+    display:          inline-block;
+    width:            100%;
+    padding:          0.875rem 1rem;
+    box-sizing:       border-box;
+    text-align:       center;
+    text-decoration:  none;
+    font-size:        0.9375rem;
+    font-weight:      700;
+    line-height:      1.2;
+    background-color: #005ea2;   /* 6.72:1 ✓ AA */
+    color:            #ffffff;
+    border-radius:    0.25rem;
+    cursor:           pointer;
+    transition:       background-color 0.15s ease;
+  }
+
+  .card__button:hover {
+    background-color: #1a4480;  /* 9.62:1 ✓ AAA */
+    color:            #ffffff;
+    text-decoration:  none;
+  }
+
+  .card__button:active {
+    background-color: #162e51;  /* 13.60:1 ✓ AAA */
+    color:            #ffffff;
+  }
+
+  /* FIX 8: both selectors required */
+  .card__button:focus,
+  .card__button:focus-visible {
+    outline:        0.25rem solid #2491ff;
+    outline-offset: 0.125rem;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     REDUCED MOTION (WCAG 2.3.3 AAA)
+     RoseBloom handles its own transition:none — this covers the button.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  @media (prefers-reduced-motion: reduce) {
+    .card__button {
+      transition: none;
+    }
+  }
 </style>

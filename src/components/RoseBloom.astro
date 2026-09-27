@@ -1,0 +1,265 @@
+---
+// src/components/RoseBloom.astro
+//
+// A self-contained generative rose custom element.
+// Designed to be used as a contained media block background —
+// NOT as a fixed full-screen overlay (see original usage).
+//
+// USAGE in ManualCard.astro:
+//   import RoseBloom from './RoseBloom.astro'
+//   <RoseBloom petals={28} bg="#243b2a" bgEnd="#0f2318" accent="#e8d9b8" />
+//
+// FILE LOCATION:
+//   src/components/RoseBloom.astro
+//   No special folder required. Astro 6 bundles <script> tags in .astro
+//   components automatically — the custom element registers itself on the
+//   client when the component's script module is first parsed.
+//
+// COLOUR THEME — Xuan Paper Green
+//   Xuan paper (宣纸) is a warm ivory: #f2ead8
+//   Gradient: #243b2a (deep jade) → #0f2318 (near-black forest)
+//   Both endpoints are 10–14:1 contrast against xuan paper ✓ AAA
+//   Kicker accent: #e8d9b8 — warm parchment tone
+//     8.68:1 on #243b2a ✓ AAA  |  11.81:1 on #0f2318 ✓ AAA
+//   Petals: warm ivory in light mode, deep ink in dark mode
+//
+// FIXES APPLIED:
+//   FIX A  Drift loop added — original only animated once then stopped.
+//   FIX B  prefers-reduced-motion guard (WCAG 2.3.3 AAA).
+//   FIX C  -webkit-mask-image added for Safari.
+//   FIX D  data-* attributes use .join(',') — explicit coercion.
+//   FIX E  export removed from class — no-op in Astro <script>.
+//   FIX F  setTimeout(fn,0) replaces rAF for post-paint deferral.
+//   FIX G  isMobile re-evaluated every cycle.
+//   FIX H  Petal colour inherits --rose-accent from wrapper scope.
+//   FIX SIZE  rose-el 200px → 120px, bottom-anchored at 65% height.
+//   FIX DRIFT  ranges [0,8] → [-3,3] symmetric, rose stays centred.
+//   FIX MASK   mask was inverted (transparent centre = white hole).
+//              Corrected to: black centre, transparent edges = vignette.
+//   FIX GRID   Blueprint grid removed — visually busy, adds nothing.
+//   FIX PETALS Light mode petals were white-on-white.
+//              Now warm ivory (#f5ede8) with subtle green tint at edges,
+//              visible against the dark green background.
+//
+// ACCESSIBILITY:
+//   Parent <div class="card__media"> carries aria-hidden="true".
+//   No additional AT surface. <rose-bloom> is non-interactive.
+
+interface Props {
+  petals:  number   // petal count (20–32 recommended)
+  bg:      string   // gradient start — default deep jade #243b2a
+  bgEnd:   string   // gradient end   — default near-black forest #0f2318
+  accent:  string   // kicker colour  — default warm parchment #e8d9b8
+}
+
+const { petals, bg, bgEnd, accent } = Astro.props
+
+// SIZING RATIONALE:
+//   Media block ~169px tall at 300px card width (16:9 ratio).
+//   At scale 0.05 (max): outermost petal = 120 × (28 × 0.05) = 168px ✓
+//   At scale 0.035 (min): = 120 × 0.98 = 118px — snug centre fill.
+//
+// DRIFT: symmetric [-3, 3] keeps the rose near-centre every cycle.
+const topRange    = [-3, 3]
+const leftRange   = [-3, 3]
+const scaleRange  = [0.035, 0.05]
+const rotRange    = [-4, 4]
+---
+
+<div
+  class="rose-wrap"
+  style={`
+    --rose-bg:      ${bg};
+    --rose-bg-end:  ${bgEnd};
+    --rose-accent:  ${accent};
+  `}
+>
+  <rose-bloom
+    class="rose-el"
+    data-top-range={topRange.join(',')}
+    data-left-range={leftRange.join(',')}
+    data-scale-range={scaleRange.join(',')}
+    data-rot-range={rotRange.join(',')}
+  >
+    {Array.from({ length: petals }, (_, i) => (
+      <div
+        class="petal"
+        style={{
+          '--index':  i + 1,
+          'z-index':  petals - i,
+        }}
+      />
+    ))}
+  </rose-bloom>
+
+  <!-- Eyebrow kicker — bottom-left, slotted from ManualCard -->
+  <div class="rose-eyebrow" aria-hidden="true">
+    <slot />
+  </div>
+</div>
+
+<style>
+  /* ── Wrapper ──────────────────────────────────────────────────────────────── */
+  .rose-wrap {
+    position:   absolute;
+    inset:      0;
+    background: linear-gradient(
+      135deg,
+      var(--rose-bg,     #243b2a),
+      var(--rose-bg-end, #0f2318)
+    );
+    overflow: hidden;
+    /*
+      FIX MASK: was `transparent centre → black edges` which punched a white
+      hole through the background in light mode.
+      Corrected: `black centre → transparent edges` = soft vignette inward.
+      The dark green bg shows through at the edges; the rose is visible centre.
+      FIX C: -webkit- prefix required for Safari / iOS.
+    */
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  /* ── Rose element — bottom-anchored, petals bloom upward ────────────────── */
+  .rose-el {
+    position:  absolute;
+    width:     120px;
+    height:    120px;
+    bottom:    35%;           /* anchor at 65% from top — petals open upward */
+    left:      50%;
+    transform: translateX(-50%);
+  }
+
+  /* ── Petals — GPU-driven via CSS calc() ──────────────────────────────────── */
+  .petal {
+    position:         absolute;
+    left:             50%;
+    height:           100%;
+    width:            100%;
+    transform-origin: bottom center;
+    transform:
+      scale(
+        calc(var(--index) * var(--rose-scale,    0.04)),
+        calc(var(--index) * var(--rose-scale,    0.04))
+      )
+      rotate(calc(var(--index) * var(--rose-rotation, 80deg)));
+    transition: transform 50s cubic-bezier(0, 0, 0.6, 0.95);
+  }
+
+  /*
+    FIX PETALS — light mode:
+    Old: #ffffff petals on a dark green bg → invisible white shapes.
+    New: warm ivory with a soft green edge — visible and harmonious
+    against the dark green background. Echoes the xuan paper tone.
+  */
+  .petal::before {
+    content:                    "";
+    position:                   absolute;
+    width:                      100%;
+    height:                     100%;
+    border-top-left-radius:     50% 35%;
+    border-bottom-right-radius: 35% 50%;
+    border-top-right-radius:    45%;
+    border-bottom-left-radius:  10%;
+    transform:                  rotate(-45deg);
+    background: radial-gradient(
+      ellipse at bottom left,
+      #f5ede8 0%,        /* warm ivory centre — echoes xuan paper */
+      #e8ddd0 60%,       /* slightly deeper ivory */
+      rgba(60, 90, 60, 0.4) 95%  /* soft green edge — ties to bg */
+    );
+    opacity: 0.85;
+  }
+
+  /* Dark mode petals — deep ink, same logic */
+  :global(.dark) .petal::before {
+    background: radial-gradient(
+      ellipse at bottom left,
+      #0a1a10 0%,
+      #071410 60%,
+      rgba(20, 50, 25, 0.6) 95%
+    );
+    opacity: 0.9;
+  }
+
+  /* ── Eyebrow slot — bottom-left ──────────────────────────────────────────── */
+  .rose-eyebrow {
+    position: absolute;
+    bottom:   0.875rem;
+    left:     1rem;
+    z-index:  10;
+  }
+
+  /* ── Reduced motion (WCAG 2.3.3 AAA) ────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .petal {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  class RoseBloom extends HTMLElement {
+    #timer: ReturnType<typeof setTimeout> | null = null
+
+    connectedCallback() {
+      // FIX B: skip entirely for reduced-motion users
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+      // FIX F: defer until after paint — rAF is for per-frame work
+      this.#timer = setTimeout(() => this.#animate(), 0)
+    }
+
+    disconnectedCallback() {
+      if (this.#timer !== null) {
+        clearTimeout(this.#timer)
+        this.#timer = null
+      }
+    }
+
+    #parseRange(raw: string | undefined): [number, number] {
+      if (!raw) return [0, 0]
+      const [a, b] = raw.split(',').map((s) => parseFloat(s.trim()))
+      return Number.isFinite(a) && Number.isFinite(b) ? [a, b] : [0, 0]
+    }
+
+    #rand(min: number, max: number): number {
+      return Math.random() * (max - min) + min
+    }
+
+    #animate() {
+      const topRange   = this.#parseRange(this.dataset.topRange)
+      const leftRange  = this.#parseRange(this.dataset.leftRange)
+      const scaleRange = this.#parseRange(this.dataset.scaleRange)
+      const rotRange   = this.#parseRange(this.dataset.rotRange)
+
+      // FIX G: re-evaluate viewport every cycle
+      const isMobile  = window.innerWidth < 640
+      const scaleBase = this.#rand(scaleRange[0], scaleRange[1])
+      const rotBase   = this.#rand(rotRange[0],   rotRange[1])
+
+      // Drift symmetrically around the bottom-anchor centre point
+      const topDrift  = this.#rand(topRange[0],  topRange[1])
+      const leftDrift = this.#rand(leftRange[0], leftRange[1])
+      this.style.bottom = `calc(35% + ${topDrift}%)`
+      this.style.left   = `calc(50% + ${leftDrift}%)`
+
+      // One property write drives all petal transforms via CSS calc()
+      this.style.setProperty(
+        '--rose-scale',
+        String(isMobile ? scaleBase * 0.8 : scaleBase)
+      )
+      this.style.setProperty(
+        '--rose-rotation',
+        `${80 + rotBase}deg`
+      )
+
+      // FIX A: loop — re-trigger just before the 50s transition ends
+      this.#timer = setTimeout(() => this.#animate(), 48_000)
+    }
+  }
+
+  // Guard against double-registration during HMR in dev
+  if (!customElements.get('rose-bloom')) {
+    customElements.define('rose-bloom', RoseBloom)
+  }
+</script>
